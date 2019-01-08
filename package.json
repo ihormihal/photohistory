@@ -1,0 +1,20 @@
+{
+  "name": "photohistory",
+  "productName": "Photo History",
+  "version": "0.0.1",
+  "description": "Photy History Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "rebuild": "electron-rebuild"
+  },
+  "author": "Ihor Mykhalchenko",
+  "license": "ISC",
+  "devDependencies": {
+    "electron-rebuild": "^1.8.2",
+    "exif-parser": "^0.1.12",
+    "preact": "^8.4.2",
+    "recursive-readdir": "^2.2.2",
+    "sharp": "^0.21.1"
+  }
+}
