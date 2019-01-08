@@ -6,13 +6,32 @@
         body {
             margin: 0;
             padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .images:after {
+            content: '';
+            display: block;
+            clear: both;
         }
         .images .image {
             display: block;
+            float: left;
+            height: 100px;
+            width: 100px;
+            position: relative;
+            background-color: beige;
         }
         .images .image img {
-            width: 200px;
+            width: auto;
             height: auto;
+            max-width: 100px;
+            max-height: 100px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            margin: auto;
         }
     </style>
 </head>

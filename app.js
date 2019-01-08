@@ -70,7 +70,7 @@ class Image extends Component {
     render() {
         return (
             h('a', { className: 'image', title: this.props.image.date, onClick: () => { this.handleClick(this.props.image.index) } }, 
-                h('img', {src: this.props.image.path})
+                h('img', {src: this.props.image.preview})
             )
         )
     }
@@ -80,21 +80,29 @@ class App extends Component {
     constructor() {
         super()
         ipcRenderer.on('images:loaded', (event, images) => {
-            this.setState({ images: sortImages(images) })
+            this.setState({ images })
+        })
+        ipcRenderer.on('image:resize', (event, image) => {
+            let newImages = this.state.images
+            newImages[image.index] = image
+            this.setState({ 
+                images: newImages
+            })
         })
     }
     
     render() {
+        let sortedImages = this.state.images ? sortImages(this.state.images): null
         return (
             h('div', { className: 'images' },
-                this.state.images && this.state.images.map((year) => {
+                sortedImages && sortedImages.map((year) => {
                     return (
-                        h('div', {className: 'year-box'},
+                        h('div', {className: 'images year-box'},
                             h('h1', null, year.title),
                             year.data.map((month) => {
                                 return h('div', null,
                                     h('h2', null, month.title),
-                                    h('div', {className: 'month-box'}, 
+                                    h('div', {className: 'images month-box'}, 
                                         month.data.map((image) => {
                                             return h(Image, {image})
                                         }

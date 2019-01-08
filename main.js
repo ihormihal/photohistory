@@ -2,6 +2,8 @@ const electron = require('electron')
 const url = require('url')
 const fs = require('fs')
 const path = require('path')
+// const sharp = require('sharp')
+const gm = require('gm').subClass({imageMagick: true})
 const recursive = require('recursive-readdir')
 const electronLocalshortcut = require('electron-localshortcut')
 
@@ -30,35 +32,55 @@ const findImages = (path) => {
     })
 }
 
-const getImagesInfo = (images) => {
-    // console.log(images)
+const imageInfo = (image) => {
     return new Promise((resolve, reject) => {
-        for(let i=0;i<images.length;i++){
-            (function(index, length){
-                fs.stat(images[index].path, (err, info) => {
-                    images[index].date = info.birthtime
-                    if(index === length-1){
-                        resolve(images)
-                    }
-                })
-            })(i, images.length)
-        }
+        fs.stat(image.path, (err, info) => {
+            if(err) {
+                reject(err)
+                return
+            }
+            resolve({
+                ...image,
+                preview: path.resolve(__dirname, 'empty.png'),
+                date: info.birthtime > info.mtime ? info.mtime : info.birthtime
+            })
+        })
     })
 }
 
-const resizeImages = (images) => {
-    for(let i=0;i<images.length;i++){
-        let filename = utils.randomStr()
-        let previewPath = `'./cache/'${filename}`
-        sharp(images[i].path)
-            .resize(200)
-            .toFile(previewPath, (err, info) => {
-                images.preview = previewPath
-            })
-    }
-    return images
-}
+// const resizeImages = (images) => {
+//     for(let i=0;i<images.length;i++){
+//         let filename = utils.randomStr()
+//         let previewPath = `'./cache/'${filename}`
+//         sharp(images[i].path)
+//             .resize(200)
+//             .toFile(previewPath, (err, info) => {
+//                 images.preview = previewPath
+//             })
+//     }
+//     return images
+// }
 
+const imageResize = (image, i) => {
+    return new Promise((resolve, reject) => {
+        let filename = utils.randomStr()
+        let previewPath = path.resolve(__dirname, './cache/', filename + '.jpg')
+        gm(image.path)
+            .resize(100, 100)
+            .noProfile()
+            .write(previewPath, function (err) {
+            if (err) {
+                reject(err)
+                return
+            }
+            resolve({
+                ...image,
+                index: i,
+                preview: previewPath
+            })
+        });
+    })
+}
 
 const handleOpenFolder = () => {
     
@@ -69,11 +91,19 @@ const handleOpenFolder = () => {
     }, (path) => {
         if(path && path.length){
             findImages(path[0])
-                .then((images) => getImagesInfo(images))
-                // .then((images) => resizeImages(images))
+                .then( (images) => Promise.all( images.map((image) => imageInfo(image)) ) )
                 .then((images) => {
                     storedImages = images
                     mainWindow.webContents.send('images:loaded', images)
+                    //async resize
+                    for(let i=0;i<images.length;i++){
+                        setTimeout(() => {
+                            imageResize(images[i], i)
+                                .then((image) => {
+                                    mainWindow.webContents.send('image:resize', image)
+                                })
+                        }, 300 )
+                    }
                 })
         }
     })
