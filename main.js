@@ -2,16 +2,17 @@ const electron = require('electron')
 const url = require('url')
 const fs = require('fs')
 const path = require('path')
-const sharp = require('sharp')
 const recursive = require('recursive-readdir')
+const electronLocalshortcut = require('electron-localshortcut')
 
 const utils = require('./utils')
-// const exif = require('exif-parser')
 
-const { app, BrowserWindow, Menu, dialog } = electron
+const { app, BrowserWindow, ipcMain, Menu, dialog, globalShortcut } = electron
 
 let mainWindow
-
+let previewWindow
+let storedImages
+let previewIndex = 0
 
 const findImages = (path) => {
     return new Promise((resolve, reject) => {
@@ -21,18 +22,27 @@ const findImages = (path) => {
                 reject(err)
                 return
             }
-            for(let i=0;i<files.length;i++){
-                fs.stat(files[i], (err, info) => {
-                    images.push({
-                        path: files[i],
-                        birthtime: info.birthtime
-                    })
-                    if(i === files.length-1){
+            let images = files.map((path) => { 
+                return { path }
+            })
+            resolve(images)
+        })
+    })
+}
+
+const getImagesInfo = (images) => {
+    // console.log(images)
+    return new Promise((resolve, reject) => {
+        for(let i=0;i<images.length;i++){
+            (function(index, length){
+                fs.stat(images[index].path, (err, info) => {
+                    images[index].date = info.birthtime
+                    if(index === length-1){
                         resolve(images)
                     }
                 })
-            }
-        })
+            })(i, images.length)
+        }
     })
 }
 
@@ -49,6 +59,7 @@ const resizeImages = (images) => {
     return images
 }
 
+
 const handleOpenFolder = () => {
     
     dialog.showOpenDialog({
@@ -56,12 +67,14 @@ const handleOpenFolder = () => {
         defaultPath: app.getPath('documents'),
         properties: ['openDirectory']
     }, (path) => {
-        if(path.length){
+        if(path && path.length){
             findImages(path[0])
-            .then((images) => resizeImages(images))
-            .then((images) => {
-                console.log(images)
-            })
+                .then((images) => getImagesInfo(images))
+                // .then((images) => resizeImages(images))
+                .then((images) => {
+                    storedImages = images
+                    mainWindow.webContents.send('images:loaded', images)
+                })
         }
     })
 }
@@ -72,6 +85,7 @@ const menuTemplate = [
         submenu: [
             {
                 label: 'Open Folder',
+                accelerator: process.platform === 'darwin' ? 'Command+O' : 'Ctrl+O',
                 click() {
                     console.log('Open Folder')
                     handleOpenFolder()
@@ -112,6 +126,36 @@ if(process.platform === 'darwin'){
 const menu = Menu.buildFromTemplate(menuTemplate)
 Menu.setApplicationMenu(menu)
 
+const previewParams = {
+    fullscreen: true
+}
+
+const previewImage = (index) => {
+    previewIndex = index
+    if(!previewWindow){
+        previewWindow = new BrowserWindow(previewParams)
+        previewWindow.on('closed', () => {
+            previewWindow = null
+        })
+        electronLocalshortcut.register(previewWindow, 'Left', () => {
+            previewPrev()
+        })
+        electronLocalshortcut.register(previewWindow, 'Right', () => {
+            previewNext()
+        })
+        electronLocalshortcut.register(previewWindow, 'Esc', () => {
+            previewWindow.close()
+        })
+    }
+    previewWindow.loadFile(storedImages[index].path)
+}
+const previewPrev = () => {
+    if(previewIndex > 1) previewImage(previewIndex-1)
+}
+const previewNext = () => {
+    if(previewIndex < storedImages.length - 1) previewImage(previewIndex+1)
+}
+
 app.on('ready', () => {
     mainWindow = new BrowserWindow({})
     mainWindow.loadFile('main.html')
@@ -119,9 +163,15 @@ app.on('ready', () => {
 
     mainWindow.on('closed', () => {
         mainWindow = null
+        previewWindow = null
     })
 
-    setTimeout(() => {
-        mainWindow.webContents.send('images:loaded', [{url: '01'}, {url: '02'}])
-    }, 3000 )
+    ipcMain.on('image:preview', (e, index) => {
+        previewImage(index)
+    })
+})
+
+app.on('will-quit', () => {
+    // Unregister all shortcuts.
+    globalShortcut.unregisterAll()
 })
