@@ -135,20 +135,22 @@ class App extends Component {
     render() {
         let sortedImages = this.state.images ? sortImages(this.state.images): null
         return h('div', {className: 'container'},
-                h('div', { className: 'images' },
+                h('div', { className: 'page' },
                     sortedImages && sortedImages.map((year) => {
-                        return h('div', {className: 'images year-box'},
+                        return h('div', {className: 'box year-box'},
                             h('h1', null, year.title),
                             year.data.map((month) => {
                                 return h('div', null,
                                     h('h2', null, month.title),
-                                    h('div', {className: 'images month-box'}, 
+                                    h('div', {className: 'box month-box'}, 
                                         month.data.map((day) => {
-                                            return h('div', {className: 'images day-box'}, 
+                                            return h('div', {className: 'box day-box'}, 
                                                 h('h2', null, day.title),
-                                                day.data.map((image) => {
-                                                    return h(Image, {image, onClick: () => this.imagePreview(image.index)})
-                                                })
+                                                h('div', {className: 'images'}, 
+                                                    day.data.map((image) => {
+                                                        return h(Image, {image, onClick: () => this.imagePreview(image.index)})
+                                                    })
+                                                )
                                             )
                                         }
                                     ))
