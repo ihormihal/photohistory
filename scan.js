@@ -2,27 +2,11 @@ const fs = require('fs')
 const path = require('path')
 const recursive = require('recursive-readdir')
 const sharp = require('sharp')
+const utils = require('./utils')
 
 
-const SCAN_PATH = '/Users/admin/Documents/'
-const SORT_ASC = true
-
-
-const MONTHS = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
-]
-
+// const SCAN_PATH = '/Volumes/Transcend/MEDIA\ STORY/2007'
+const SCAN_PATH = '/Users/admin/Documents'
 
 const findImages = (dirPath) => {
     return new Promise((resolve, reject) => {
@@ -55,12 +39,21 @@ const imageInfo = (image) => {
     })
 }
 
-const resize = (image) => {
+const showProgress = (index, total) => {
+    progress = Math.round( (index+1)*100/total )
+    process.stdout.clearLine();
+    process.stdout.cursorTo(0);
+    process.stdout.write(progress + '%');
+}
+
+const resize = (image, index, total) => {
+
     const imagePath = path.resolve(SCAN_PATH, image.path)
     return sharp(imagePath)
         .resize(100)
         .toBuffer()
         .then(data => {
+            showProgress(index, total)
             return {
                 ...image,
                 preview: Buffer.from(data).toString('base64')
@@ -68,63 +61,19 @@ const resize = (image) => {
         })
 }
 
-const globalSort = (data) => {
-    return data.sort((a, b) => SORT_ASC ? a.date - b.date : b.date - a.date)
-}
-
-const sortImages = (images) => {
-    let data = {}
-    for(let i=0;i<images.length;i++){
-        let dt = new Date(images[i].date)
-        let year = dt.getFullYear()
-        let month = dt.getMonth()
-        if(!data[year]) data[year] = {}
-        if(!data[year][month]) data[year][month] = []
-        data[year][month].push({
-            ...images[i],
-            index: i
-        })
-    }
-    
-    let output = []
-    for(let year in data){
-        let yearData = []
-        for(month in data[year]){
-            yearData.push({
-                title: MONTHS[month],
-                date: month,
-                data: globalSort(data[year][month])
-            })
-        }
-        let yearCollection = {
-            title: year,
-            date: year,
-            data: globalSort(yearData)
-        }
-        output.push(yearCollection)
-    }
-    return globalSort(output)
-}
-
-//flat array
-
-// findImages(SCAN_PATH)
-//     .then( images => Promise.all( images.map( image => imageInfo(image)) ) )
-//     .then( images => Promise.all( images.map( image => resize(image)) ) )
-//     .then((images) => {
-//         fs.writeFile('index.json', JSON.stringify(images), (err) => {
-//             if(err) {
-//                 return console.log(err)
-//             }
-//             console.log("The file was saved!")
-//         })
-//     })
-
-
 //sorted array
 findImages(SCAN_PATH)
     .then( images => Promise.all( images.map( image => imageInfo(image)) ) )
+    .then( images => utils.dateSort( images ) )
+    .then( images => Promise.all( images.map( (image, index) => resize(image, index, images.length)) ) )
     .then( images => {
+
+        // console.log(sortImages(images))
+        fs.writeFile(path.resolve(SCAN_PATH, 'images.json'), JSON.stringify(images), (err) => {
+            if(err) {
+                return console.log(err)
+            }
+            console.log(" The file was saved!")
+        })
         
-        console.log(sortImages(images))
     })

@@ -1,11 +1,8 @@
 const preact = require('preact')
 const electron = require('electron')
+const utils = require('./utils')
 const { h, render, Component } = preact
 const { ipcRenderer } = electron
-
-const CONFIG = {
-    SORT_ASC: false,
-}
 
 const MONTHS = [
     'January',
@@ -21,10 +18,6 @@ const MONTHS = [
     'November',
     'December'
 ]
-
-const globalSort = (data) => {
-    return data.sort((a, b) => CONFIG.SORT_ASC ? a.date - b.date : b.date - a.date)
-}
 
 const sortImages = (images) => {
     let data = {}
@@ -47,77 +40,80 @@ const sortImages = (images) => {
             yearData.push({
                 title: MONTHS[month],
                 date: month,
-                data: globalSort(data[year][month])
+                data: utils.dateSort(data[year][month])
             })
         }
         let yearCollection = {
             title: year,
             date: year,
-            data: globalSort(yearData)
+            data: utils.dateSort(yearData)
         }
         output.push(yearCollection)
     }
-    return globalSort(output)
+    return utils.dateSort(output)
 }
+
 
 class Image extends Component {
 
-    handleClick(index) {
-        console.log('handleClick', index)
-        ipcRenderer.send('image:preview', index)
-    }
-
     render() {
         return (
-            h('a', { className: 'image', title: this.props.image.date, onClick: () => { this.handleClick(this.props.image.index) } }, 
-                h('img', {src: this.props.image.preview})
+            h('a', { className: 'image', title: this.props.image.date, onClick: (e) => { this.props.onClick() } }, 
+                h('img', {src: 'data:image/png;base64,'+this.props.image.preview})
             )
         )
     }
 }
 
 class App extends Component {
-    constructor() {
-        super()
+    constructor(props){
+        super(props)
+        this.state = { images: [], previewIndex: 0, basePath: '' }
+        this.previewBox = preact.createRef()
+    }
+
+    componentDidMount() {
         ipcRenderer.on('images:loaded', (event, images) => {
             this.setState({ images })
         })
-        ipcRenderer.on('image:resize', (event, image) => {
-            let newImages = this.state.images
-            newImages[image.index] = image
-            this.setState({ 
-                images: newImages
-            })
+        ipcRenderer.on('path:loaded', (event, basePath) => {
+            this.setState({ basePath })
         })
+    }
+
+    imagePreview(index){
+        console.log(this.previewBox)
+        this.setState({ previewIndex: index }, () => {
+            this.previewBox.current.webkitRequestFullscreen()
+        })
+        
     }
     
     render() {
         let sortedImages = this.state.images ? sortImages(this.state.images): null
-        return (
-            h('div', { className: 'images' },
-                sortedImages && sortedImages.map((year) => {
-                    return (
-                        h('div', {className: 'images year-box'},
+        let previewSrc = this.state.images && this.state.previewIndex < this.state.images.length ? this.state.basePath + this.state.images[this.state.previewIndex].path : ''
+        return h('div', {className: 'container'},
+                h('div', { className: 'images' },
+                    sortedImages && sortedImages.map((year) => {
+                        return h('div', {className: 'images year-box'},
                             h('h1', null, year.title),
                             year.data.map((month) => {
                                 return h('div', null,
                                     h('h2', null, month.title),
                                     h('div', {className: 'images month-box'}, 
                                         month.data.map((image) => {
-                                            return h(Image, {image})
+                                            return h(Image, {image, onClick: () => this.imagePreview(image.index)})
                                         }
                                     ))
                                 )
                             })
                         )
-                    )
-                })
+                    })
+                ),
+                h('div', {className: 'preview', ref: this.previewBox }, h('img', {src: previewSrc }) )
             )
-        )
     }
 }
 
 
-
-// render an instance of Clock into <body>:
 render(h(App), window.document.body);

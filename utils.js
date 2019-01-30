@@ -7,3 +7,6 @@ exports.randomStr = (length = 8) => {
   }
   return str;
 }
+exports.dateSort = (data, SORT_ASC) => {
+  return data.sort((a, b) => SORT_ASC ? a.date - b.date : b.date - a.date)
+}
