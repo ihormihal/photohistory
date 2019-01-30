@@ -5,8 +5,8 @@
   "description": "Photy History Desktop App",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "rebuild": "electron-rebuild"
+    "scan": "node scan.js",
+    "start": "electron ."
   },
   "author": "Ihor Mykhalchenko",
   "license": "ISC",
