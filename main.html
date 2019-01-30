@@ -7,6 +7,11 @@
             margin: 0;
             padding: 0;
             font-family: Arial, Helvetica, sans-serif;
+            color: #fff;
+            background-color: #000;
+        }
+        h1, h2 {
+            padding: 0 16px;
         }
         .preview {
             display: block;
@@ -24,6 +29,10 @@
         .preview.hidden {
             display: none;
         }
+        .images.day-box {
+            margin-bottom: 32px;
+            border-top: 1px solid #444;
+        }
         .images:after {
             content: '';
             display: block;
@@ -35,7 +44,9 @@
             height: 100px;
             width: 100px;
             position: relative;
-            background-color: beige;
+            border: 1px solid #444;
+            border-left: none;
+            border-top: none;
         }
         .images .image img {
             width: auto;

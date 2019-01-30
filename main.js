@@ -24,7 +24,7 @@ const handleOpenFolder = () => {
 const handleOpenFile = () => {
     dialog.showOpenDialog({
         title: 'Select JSON file',
-        defaultPath: app.getPath('documents'),
+        defaultPath: '/Volumes/Transcend/MEDIA\ STORY/2018/Europe/Amsterdam', //app.getPath('documents'),
         properties: ['openFile'],
         filters: [
             { name: 'JSON', extensions: ['json'] } 

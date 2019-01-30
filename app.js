@@ -25,9 +25,11 @@ const sortImages = (images) => {
         let dt = new Date(images[i].date)
         let year = dt.getFullYear()
         let month = dt.getMonth()
+        let day = dt.getDate()
         if(!data[year]) data[year] = {}
-        if(!data[year][month]) data[year][month] = []
-        data[year][month].push({
+        if(!data[year][month]) data[year][month] = {}
+        if(!data[year][month][day]) data[year][month][day] = []
+        data[year][month][day].push({
             ...images[i],
             index: i
         })
@@ -37,10 +39,19 @@ const sortImages = (images) => {
     for(let year in data){
         let yearData = []
         for(month in data[year]){
+            let monthData = []
+            for(day in data[year][month]){
+                let dayData = utils.dateSort(data[year][month][day])
+                monthData.push({
+                    title: `${day}.${month}.${year}`,
+                    date: day,
+                    data: dayData
+                })
+            }
             yearData.push({
                 title: MONTHS[month],
                 date: month,
-                data: utils.dateSort(data[year][month])
+                data: utils.dateSort(monthData)
             })
         }
         let yearCollection = {
@@ -50,6 +61,7 @@ const sortImages = (images) => {
         }
         output.push(yearCollection)
     }
+    console.log(output)
     return utils.dateSort(output)
 }
 
@@ -131,8 +143,13 @@ class App extends Component {
                                 return h('div', null,
                                     h('h2', null, month.title),
                                     h('div', {className: 'images month-box'}, 
-                                        month.data.map((image) => {
-                                            return h(Image, {image, onClick: () => this.imagePreview(image.index)})
+                                        month.data.map((day) => {
+                                            return h('div', {className: 'images day-box'}, 
+                                                h('h2', null, day.title),
+                                                day.data.map((image) => {
+                                                    return h(Image, {image, onClick: () => this.imagePreview(image.index)})
+                                                })
+                                            )
                                         }
                                     ))
                                 )

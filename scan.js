@@ -5,8 +5,8 @@ const sharp = require('sharp')
 const utils = require('./utils')
 
 
-// const SCAN_PATH = '/Volumes/Transcend/MEDIA\ STORY/2007'
-const SCAN_PATH = '/Users/admin/Documents'
+const SCAN_PATH = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe/Amsterdam'
+// const SCAN_PATH = '/Users/admin/Documents'
 
 const findImages = (dirPath) => {
     return new Promise((resolve, reject) => {
