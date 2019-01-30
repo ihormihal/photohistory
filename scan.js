@@ -5,7 +5,7 @@ const sharp = require('sharp')
 const utils = require('./utils')
 
 
-const SCAN_PATH = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe/Amsterdam'
+const SCAN_PATH = '/Volumes/Transcend/MEDIA\ STORY/2009'
 // const SCAN_PATH = '/Users/admin/Documents'
 
 const findImages = (dirPath) => {
@@ -39,21 +39,22 @@ const imageInfo = (image) => {
     })
 }
 
-const showProgress = (index, total) => {
-    progress = Math.round( (index+1)*100/total )
+const showProgress = (i, total) => {
+    progress = Math.ceil( i*100/total )
     process.stdout.clearLine();
     process.stdout.cursorTo(0);
-    process.stdout.write(progress + '%');
+    process.stdout.write(`${i}/${total} -> ${progress}%`);
 }
 
-const resize = (image, index, total) => {
-
+let ri = 0
+const resize = (image, total) => {
     const imagePath = path.resolve(SCAN_PATH, image.path)
     return sharp(imagePath)
         .resize(100)
         .toBuffer()
         .then(data => {
-            showProgress(index, total)
+            ri++
+            showProgress(ri, total)
             return {
                 ...image,
                 preview: Buffer.from(data).toString('base64')
@@ -65,7 +66,7 @@ const resize = (image, index, total) => {
 findImages(SCAN_PATH)
     .then( images => Promise.all( images.map( image => imageInfo(image)) ) )
     .then( images => utils.dateSort( images ) )
-    .then( images => Promise.all( images.map( (image, index) => resize(image, index, images.length)) ) )
+    .then( images => Promise.all( images.map( (image, index) => resize(image, images.length)) ) )
     .then( images => {
 
         // console.log(sortImages(images))

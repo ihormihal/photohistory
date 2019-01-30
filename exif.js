@@ -4,8 +4,8 @@ const fs = require('fs')
 const path = require('path')
 const recursive = require('recursive-readdir')
 
-const sourceFolder = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe\ RAW/Amsterdam'
-const targetFolder = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe/Amsterdam'
+const sourceFolder = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe\ RAW/Paris'
+const targetFolder = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe/Paris'
 
 
 const findFiles = (dirPath) => {
@@ -42,8 +42,8 @@ const fileInfo = (file) => {
 }
 
 const updateTime = (file, date) => {
+    // return console.log(file.path, date)
     return new Promise((resolve, reject) => {
-        console.log(`${file.path} -> ${date}`)
         fs.utimes(file.path, date, date, (err, info) => {
             if(err) {
                 reject(err)
@@ -61,8 +61,8 @@ const main = async () => {
     const targetFiles = await findFiles(targetFolder)
 
     for(file of targetFiles){
-        let ref = sourceFilesInfo.find((file => file.filename === file.filename))
-        updateTime(file, ref.date)
+        let ref = sourceFilesInfo.find((f => f.filename === file.filename))
+        if(ref) updateTime(file, ref.date)
     }
 
 }

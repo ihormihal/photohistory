@@ -21,31 +21,37 @@ const MONTHS = [
 
 const sortImages = (images) => {
     let data = {}
+    const offset = new Date().getTimezoneOffset() * 60000
     for(let i=0;i<images.length;i++){
-        let dt = new Date(images[i].date)
+        let dt = new Date(images[i].date.slice(0, -5))
         let year = dt.getFullYear()
         let month = dt.getMonth()
         let day = dt.getDate()
+
+        let m = parseInt(month)+1
+        if(m<10) m = '0'+m
+        let d = day<10 ? '0'+day : day
+        
         if(!data[year]) data[year] = {}
-        if(!data[year][month]) data[year][month] = {}
-        if(!data[year][month][day]) data[year][month][day] = []
-        data[year][month][day].push({
+        if(!data[year][m]) data[year][m] = {}
+        if(!data[year][m][d]) data[year][m][d] = []
+        data[year][m][d].push({
             ...images[i],
             index: i
         })
     }
     
+    //sorting
     let output = []
     for(let year in data){
         let yearData = []
         for(month in data[year]){
             let monthData = []
             for(day in data[year][month]){
-                let dayData = utils.dateSort(data[year][month][day])
                 monthData.push({
                     title: `${day}.${month}.${year}`,
                     date: day,
-                    data: dayData
+                    data: utils.dateSort(data[year][month][day])
                 })
             }
             yearData.push({
@@ -61,7 +67,6 @@ const sortImages = (images) => {
         }
         output.push(yearCollection)
     }
-    console.log(output)
     return utils.dateSort(output)
 }
 
