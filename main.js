@@ -1,7 +1,6 @@
 const electron = require('electron')
 const fs = require('fs')
 const path = require('path')
-const electronLocalshortcut = require('electron-localshortcut')
 const utils = require('./utils')
 
 const { app, BrowserWindow, ipcMain, Menu, dialog, globalShortcut } = electron
@@ -97,10 +96,6 @@ app.on('ready', () => {
         mainWindow = null
         previewWindow = null
     })
-
-    // ipcMain.on('image:preview', (e, index) => {
-    //     previewImage(index)
-    // })
 })
 
 app.on('will-quit', () => {

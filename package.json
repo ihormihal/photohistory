@@ -12,14 +12,8 @@
   "license": "ISC",
   "devDependencies": {
     "electron": "*",
-    "electron-localshortcut": "*",
-    "electron-rebuild": "*",
-    "gm": "*",
     "preact": "*",
     "recursive-readdir": "*",
     "sharp": "*"
-  },
-  "dependencies": {
-    "photoswipe": "^4.1.3"
   }
 }

@@ -68,7 +68,13 @@ class Image extends Component {
 class App extends Component {
     constructor(props){
         super(props)
-        this.state = { images: [], previewIndex: 0, basePath: '' }
+        this.state = { 
+            images: [], 
+            fullScreen: false, 
+            previewIndex: 0, 
+            previewSrc: null
+        }
+        this.basePath = ''
         this.previewBox = preact.createRef()
     }
 
@@ -76,22 +82,46 @@ class App extends Component {
         ipcRenderer.on('images:loaded', (event, images) => {
             this.setState({ images })
         })
-        ipcRenderer.on('path:loaded', (event, basePath) => {
-            this.setState({ basePath })
+        ipcRenderer.on('path:loaded', (event, path) => {
+            this.basePath = path
+        })
+        document.addEventListener('keydown', (e) => {
+            if (e.keyCode === 37) {
+                this.imagePreviewPrev()
+            }
+            else if (e.keyCode == 39) {
+                this.imagePreviewNext()
+            }
+        })
+        document.addEventListener('webkitfullscreenchange', (e) => {
+            this.setState({ fullScreen: !this.state.fullScreen })
         })
     }
 
-    imagePreview(index){
-        console.log(this.previewBox)
-        this.setState({ previewIndex: index }, () => {
-            this.previewBox.current.webkitRequestFullscreen()
+    imagePreview(previewIndex){
+        this.setState({ previewIndex })
+        const previewSrc = this.state.images && previewIndex < this.state.images.length ? this.basePath + this.state.images[previewIndex].path : ''
+        this.setState({ previewSrc }, () => {
+            if(!this.state.fullScreen) this.previewBox.current.webkitRequestFullscreen()
         })
-        
+    }
+
+    imagePreviewPrev() {
+        if(this.state.fullScreen){
+            const previewIndex = this.state.previewIndex > 0 ? this.state.previewIndex - 1 : this.state.images.length - 1
+            this.imagePreview(previewIndex)
+        }
+    }
+
+    imagePreviewNext() {
+        if(this.state.fullScreen){
+            const previewIndex = this.state.previewIndex + 1 < this.state.images.length ? this.state.previewIndex + 1 : 0
+            this.imagePreview(previewIndex)
+        }
     }
     
     render() {
         let sortedImages = this.state.images ? sortImages(this.state.images): null
-        let previewSrc = this.state.images && this.state.previewIndex < this.state.images.length ? this.state.basePath + this.state.images[this.state.previewIndex].path : ''
         return h('div', {className: 'container'},
                 h('div', { className: 'images' },
                     sortedImages && sortedImages.map((year) => {
@@ -110,7 +140,7 @@ class App extends Component {
                         )
                     })
                 ),
-                h('div', {className: 'preview', ref: this.previewBox }, h('img', {src: previewSrc }) )
+                h('div', {className: `preview ${this.state.fullScreen ? '' : 'hidden'}`, ref: this.previewBox }, h('img', {src: this.state.previewSrc }) )
             )
     }
 }
