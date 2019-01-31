@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const recursive = require('recursive-readdir')
 
-const findFiles = (dirPath, pattern) => {
+const findFiles = (dirPath, pattern, isAbsolutePath) => {
     return new Promise((resolve, reject) => {
         recursive(dirPath, [pattern], (err, files) => {
             if(err) {
@@ -12,7 +12,7 @@ const findFiles = (dirPath, pattern) => {
             let output = files.map((filePath) => { 
                 return { 
                     filename: path.parse(filePath).name,
-                    path: filePath 
+                    path: isAbsolutePath ? filePath : path.relative(dirPath, filePath)
                 }
             })
             resolve(output)

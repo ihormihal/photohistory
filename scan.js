@@ -21,6 +21,7 @@ const showProgress = (i, total) => {
 let counter = 0
 const resize = (scanPath, image, total) => {
     const imagePath = path.resolve(scanPath, image.path)
+    console.log(imagePath)
     return sharp(imagePath)
         .resize(100)
         .toBuffer()
