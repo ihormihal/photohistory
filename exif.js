@@ -1,68 +1,19 @@
 // restore exif data
+const utils = require('./core/utils')
 
-const fs = require('fs')
-const path = require('path')
-const recursive = require('recursive-readdir')
 
 const sourceFolder = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe\ RAW/Paris'
 const targetFolder = '/Volumes/Transcend/MEDIA\ STORY/2018/Europe/Paris'
 
 
-const findFiles = (dirPath) => {
-    return new Promise((resolve, reject) => {
-        recursive(dirPath, ["!*.{png,gif,jpg,jpeg,JPG,JPEG,NEF}"], (err, files) => {
-            if(err) {
-                reject(err)
-                return
-            }
-            let output = files.map((filePath) => { 
-                return { 
-                    filename: path.parse(filePath).name,
-                    path: filePath 
-                }
-            })
-            resolve(output)
-        })
-    })
-}
-
-const fileInfo = (file) => {
-    return new Promise((resolve, reject) => {
-        fs.stat(file.path, (err, info) => {
-            if(err) {
-                reject(err)
-                return
-            }
-            resolve({
-                ...file,
-                date: info.birthtime > info.mtime ? info.mtime : info.birthtime
-            })
-        })
-    })
-}
-
-const updateTime = (file, date) => {
-    // return console.log(file.path, date)
-    return new Promise((resolve, reject) => {
-        fs.utimes(file.path, date, date, (err, info) => {
-            if(err) {
-                reject(err)
-                return
-            }
-            console.log(`${file.filename} -> ${date}`)
-            resolve()
-        })
-    })
-}
-
 const main = async () => {
-    const sourceFiles = await findFiles(sourceFolder)
-    const sourceFilesInfo = await Promise.all(sourceFiles.map(file => fileInfo(file)))
-    const targetFiles = await findFiles(targetFolder)
+    const sourceFiles = await utils.findFiles(sourceFolder, "!*.{png,gif,jpg,jpeg,JPG,JPEG,NEF}")
+    const sourceFilesInfo = await Promise.all(sourceFiles.map(file => utils.fileInfo(file)))
+    const targetFiles = await utils.findFiles(targetFolder, "!*.{png,gif,jpg,jpeg,JPG,JPEG}")
 
     for(file of targetFiles){
         let ref = sourceFilesInfo.find((f => f.filename === file.filename))
-        if(ref) updateTime(file, ref.date)
+        if(ref) utils.updateTime(file, ref.date)
     }
 
 }

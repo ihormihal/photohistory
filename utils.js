@@ -7,9 +7,3 @@ exports.randomStr = (length = 8) => {
   }
   return str;
 }
-exports.dateSort = (data) => {
-  return data.sort((a, b) => {
-    if (a.date > b.date) return -1
-    if (a.date < b.date) return 1
-  })
-}

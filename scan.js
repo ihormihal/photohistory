@@ -1,41 +1,13 @@
 const fs = require('fs')
 const path = require('path')
-const recursive = require('recursive-readdir')
 const sharp = require('sharp')
-const utils = require('./utils')
 
+const utils = require('./core/utils')
 
-const SCAN_PATH = '/Volumes/Transcend/MEDIA\ STORY/2009'
-// const SCAN_PATH = '/Users/admin/Documents'
-
-const findImages = (dirPath) => {
-    return new Promise((resolve, reject) => {
-        recursive(dirPath, ["!*.{png,gif,jpg,jpeg,JPG,JPEG}"], (err, files) => {
-            if(err) {
-                reject(err)
-                return
-            }
-            let images = files.map((imagePath) => { 
-                return { path: path.relative(SCAN_PATH, imagePath) }
-            })
-            resolve(images)
-        })
-    })
-}
-
-const imageInfo = (image) => {
-    return new Promise((resolve, reject) => {
-        const imagePath = path.resolve(SCAN_PATH, image.path)
-        fs.stat(imagePath, (err, info) => {
-            if(err) {
-                reject(err)
-                return
-            }
-            resolve({
-                ...image,
-                date: info.birthtime > info.mtime ? info.mtime : info.birthtime
-            })
-        })
+const sort = (data) => {
+    return data.sort((a, b) => {
+        if (a.date > b.date) return -1
+        if (a.date < b.date) return 1
     })
 }
 
@@ -46,15 +18,15 @@ const showProgress = (i, total) => {
     process.stdout.write(`${i}/${total} -> ${progress}%`);
 }
 
-let ri = 0
-const resize = (image, total) => {
-    const imagePath = path.resolve(SCAN_PATH, image.path)
+let counter = 0
+const resize = (scanPath, image, total) => {
+    const imagePath = path.resolve(scanPath, image.path)
     return sharp(imagePath)
         .resize(100)
         .toBuffer()
         .then(data => {
-            ri++
-            showProgress(ri, total)
+            counter++
+            showProgress(counter, total)
             return {
                 ...image,
                 preview: Buffer.from(data).toString('base64')
@@ -62,19 +34,24 @@ const resize = (image, total) => {
         })
 }
 
-//sorted array
-findImages(SCAN_PATH)
-    .then( images => Promise.all( images.map( image => imageInfo(image)) ) )
-    .then( images => utils.dateSort( images ) )
-    .then( images => Promise.all( images.map( (image, index) => resize(image, images.length)) ) )
-    .then( images => {
-
-        // console.log(sortImages(images))
-        fs.writeFile(path.resolve(SCAN_PATH, 'images.json'), JSON.stringify(images), (err) => {
-            if(err) {
-                return console.log(err)
-            }
-            console.log(" The file was saved!")
+const scan = (scanPath) => {
+    const indexFilePath = path.resolve(scanPath, 'images.json')
+    counter = 0
+    utils.findFiles(scanPath, '!*.{png,gif,jpg,jpeg,JPG,JPEG}')
+        .then( images => Promise.all( images.map( image => utils.fileInfo(image)) ) )
+        .then( images => sort( images ) )
+        .then( images => Promise.all( images.map( (image, index) => resize(scanPath, image, images.length)) ) )
+        .then( images => {
+            fs.writeFile(indexFilePath, JSON.stringify(images), (err) => {
+                if(err) {
+                    return console.log(err)
+                }
+                console.log(" The file was saved!")
+            })
+            
         })
-        
-    })
+}
+
+// /Users/admin/Documents
+// /Volumes/Transcend/MEDIA\ STORY/2009
+scan('/Users/admin/Documents')

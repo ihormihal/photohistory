@@ -1,6 +1,5 @@
 const preact = require('preact')
 const electron = require('electron')
-const utils = require('./utils')
 const { h, render, Component } = preact
 const { ipcRenderer } = electron
 
@@ -19,9 +18,16 @@ const MONTHS = [
     'December'
 ]
 
+const sort = (data) => {
+    return data.sort((a, b) => {
+        if (a.date > b.date) return -1
+        if (a.date < b.date) return 1
+    })
+}
+
 const sortImages = (images) => {
     let data = {}
-    const offset = new Date().getTimezoneOffset() * 60000
+    // const offset = new Date().getTimezoneOffset() * 60000
     for(let i=0;i<images.length;i++){
         let dt = new Date(images[i].date.slice(0, -5))
         let year = dt.getFullYear()
@@ -51,23 +57,23 @@ const sortImages = (images) => {
                 monthData.push({
                     title: `${day}.${month}.${year}`,
                     date: day,
-                    data: utils.dateSort(data[year][month][day])
+                    data: sort(data[year][month][day])
                 })
             }
             yearData.push({
                 title: MONTHS[month],
                 date: month,
-                data: utils.dateSort(monthData)
+                data: sort(monthData)
             })
         }
         let yearCollection = {
             title: year,
             date: year,
-            data: utils.dateSort(yearData)
+            data: sort(yearData)
         }
         output.push(yearCollection)
     }
-    return utils.dateSort(output)
+    return sort(output)
 }
 
 
@@ -75,7 +81,7 @@ class Image extends Component {
 
     render() {
         return (
-            h('a', { className: 'image', title: this.props.image.date, onClick: (e) => { this.props.onClick() } }, 
+            h('a', { className: 'image', title: this.props.image.date, onClick: (e) => { this.props.onClick() }, onContextMenu: (e) => this.props.onContext(e) }, 
                 h('img', {src: 'data:image/png;base64,'+this.props.image.preview})
             )
         )
@@ -136,6 +142,13 @@ class App extends Component {
             this.imagePreview(previewIndex)
         }
     }
+
+    imageContext(e) {
+        ipcRenderer.send('image:context', {
+            x: e.clientX, 
+            y: e.clientY
+        })
+    }
     
     render() {
         let sortedImages = this.state.images ? sortImages(this.state.images): null
@@ -153,7 +166,7 @@ class App extends Component {
                                                 h('h2', null, day.title),
                                                 h('div', {className: 'images'}, 
                                                     day.data.map((image) => {
-                                                        return h(Image, {image, onClick: () => this.imagePreview(image.index)})
+                                                        return h(Image, {image, onClick: () => this.imagePreview(image.index), onContext: (e) => this.imageContext(e)})
                                                     })
                                                 )
                                             )
