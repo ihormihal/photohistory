@@ -1,0 +1,111 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #fff;
+    background-color: #000;
+}
+h1, h2 {
+    padding: 0 16px;
+}
+.preview {
+    display: block;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+.preview img {
+    max-width: 100%;
+    max-height: 100%;
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    margin: auto;
+}
+.preview.hidden {
+    display: none;
+}
+.images {
+    margin-bottom: 32px;
+    border-top: 1px solid #444;
+}
+.images:after {
+    content: '';
+    display: block;
+    clear: both;
+}
+.images .image {
+    display: block;
+    float: left;
+    height: 100px;
+    width: 100px;
+    position: relative;
+    border: 1px solid #444;
+    border-left: none;
+    border-top: none;
+}
+.images .image img {
+    width: auto;
+    height: auto;
+    max-width: 100px;
+    max-height: 100px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: auto;
+}
+.popup-wrapper {
+    position: fixed;
+    z-index: 9000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.popup-wrapper .popup {
+    min-width: 200px;
+    min-height: 100px;
+    position: relative;
+    background-color: #fff;
+}
+.popup-wrapper .popup .close {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+.popup-wrapper .popup .popup-content {
+    margin-top: 32px;
+}
+.close {
+    height: 32px;
+    width: 32px;
+    position: absolute;
+}
+.close:after, .close:before {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin-top: 15px;
+    margin-left: 9px;
+    content: '';
+    width: 16px;
+    height: 1px;
+    background-color: #999;
+}
+.close:before {
+    transform: rotate(45deg);
+}
+.close:after {
+    transform: rotate(-45deg);
+}
+
+.popup-wrapper .popup.popup-edit {
+    padding: 16px;
+}

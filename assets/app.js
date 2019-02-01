@@ -78,6 +78,11 @@ const sortImages = (images) => {
 
 class Popup extends Component {
 
+    constructor(props){
+        super(props)
+        this.state = {}
+    }
+
     close(){
         this.props.close()
     }
@@ -86,10 +91,37 @@ class Popup extends Component {
         e.stopPropagation()
     }
 
+    setDate(date){
+        this.setState({date})
+    }
+
+    setTime(time){
+        this.setState({time})
+    }
+
+    submit(e){
+        e.preventDefault()
+        if(this.state.date && this.state.time){
+            let date = new Date(`${this.state.date}T${this.state.time}`)
+            this.props.setDate(date)
+        }
+    }
+    
     render() {
         if(this.props.isOpen){
             return h('div', { className: 'popup-wrapper', onClick: (e) => this.close(e) },
-                h('div', { className: 'popup', onClick: (e) => this.popupClick(e) })
+                h('div', { className: 'popup popup-edit', onClick: (e) => this.popupClick(e) }, 
+                    h('div', { className: 'close', onClick: (e) => this.close(e) }),
+                    h('div', { className: 'popup-content' },
+                        h('form', { className: '', onSubmit: (e) => this.submit(e) },
+                            h('div', null,
+                                h('input', { type: 'date', name: 'date', onClick: (e) => this.setDate(e.target.value) }),
+                                h('input', { type: 'time', name: 'time', onClick: (e) => this.setTime(e.target.value) })
+                            ),
+                            h('button', { type: 'submit' }, 'OK')
+                        )
+                    ) 
+                )
             )
         }else{
             return false
@@ -184,6 +216,10 @@ class App extends Component {
     closePopup(){
         this.setState({popupIsOpen: false})
     }
+
+    setDate(date, index){
+        console.log(date, index)
+    }
     
     render() {
         let sortedImages = this.state.images ? sortImages(this.state.images): null
@@ -213,7 +249,7 @@ class App extends Component {
                     })
                 ),
                 h('div', {className: `preview ${this.state.fullScreen ? '' : 'hidden'}`, ref: this.previewBox }, h('img', {src: this.state.previewSrc }) ),
-                h(Popup, { isOpen: this.state.popupIsOpen, close: () => this.closePopup() })
+                h(Popup, { isOpen: this.state.popupIsOpen, close: () => this.closePopup(), setDate: (date, index) => this.setDate(date, index) })
             )
     }
 }

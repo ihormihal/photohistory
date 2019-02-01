@@ -2,10 +2,11 @@ const electron = require('electron')
 const fs = require('fs')
 const path = require('path')
 
-const { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, globalShortcut } = electron
+const { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, globalShortcut, shell } = electron
 
 
 let win
+let basePath
 let imagesData
 
 const handleOpenFolder = () => {
@@ -33,7 +34,8 @@ const handleOpenFile = () => {
         if(selectedPath && selectedPath.length){
             fs.readFile(selectedPath[0], 'utf8', function(err, contents) {
                 imagesData = JSON.parse(contents)
-                win.webContents.send('path:loaded', path.dirname(selectedPath[0]) + '/')
+                basePath = path.dirname(selectedPath[0]) + '/'
+                win.webContents.send('path:loaded', basePath)
                 win.webContents.send('images:loaded', imagesData)
             })
         }
@@ -91,15 +93,24 @@ Menu.setApplicationMenu(menu)
 app.on('ready', () => {
     win = new BrowserWindow({})
     win.loadFile('main.html')
-    win.webContents.openDevTools()
+    // win.webContents.openDevTools()
 
     win.on('closed', () => {
         win = null
         previewWindow = null
     })
 
+    //image context menu
     const ctxImageMenu = new Menu()
     let ctxImageIndex
+    ctxImageMenu.append(new MenuItem({
+        label: 'Reveal in Finder',
+        click: () => {
+            if(basePath && imagesData && imagesData[ctxImageIndex] && imagesData[ctxImageIndex].path){
+                shell.showItemInFolder(path.resolve(basePath, imagesData[ctxImageIndex].path))
+            }
+        }
+    }))
     ctxImageMenu.append(new MenuItem({
         label: 'Edit time',
         click: () => {
