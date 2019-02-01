@@ -1,12 +1,12 @@
 const electron = require('electron')
 const fs = require('fs')
 const path = require('path')
-const utils = require('./utils')
 
 const { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, globalShortcut } = electron
 
 
 let win
+let imagesData
 
 const handleOpenFolder = () => {
     
@@ -32,8 +32,9 @@ const handleOpenFile = () => {
     }, (selectedPath) => {
         if(selectedPath && selectedPath.length){
             fs.readFile(selectedPath[0], 'utf8', function(err, contents) {
+                imagesData = JSON.parse(contents)
                 win.webContents.send('path:loaded', path.dirname(selectedPath[0]) + '/')
-                win.webContents.send('images:loaded', JSON.parse(contents))
+                win.webContents.send('images:loaded', imagesData)
             })
         }
     })
@@ -54,13 +55,6 @@ const menuTemplate = [
         ]
     }
 ]
-
-const ctxMenuImageTemplate = [{
-    label: 'Edit time',
-    click: () => {
-
-    }
-}]
 
 if(process.env.NODE_ENV !== 'production'){
     menuTemplate.push({
@@ -104,9 +98,17 @@ app.on('ready', () => {
         previewWindow = null
     })
 
-    const ctxImageMenu = Menu.buildFromTemplate(ctxMenuImageTemplate)
+    const ctxImageMenu = new Menu()
+    let ctxImageIndex
+    ctxImageMenu.append(new MenuItem({
+        label: 'Edit time',
+        click: () => {
+            if(ctxImageIndex) win.webContents.send('popup:editDate', ctxImageIndex)
+        }
+    }))
 
     ipcMain.on('image:context', (e, data) => {
+        ctxImageIndex = data.imageIndex
         ctxImageMenu.popup(win, data.x, data.y)
     })
 

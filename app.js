@@ -76,12 +76,33 @@ const sortImages = (images) => {
     return sort(output)
 }
 
+class Popup extends Component {
+
+    close(){
+        this.props.close()
+    }
+
+    popupClick(e){
+        e.stopPropagation()
+    }
+
+    render() {
+        if(this.props.isOpen){
+            return h('div', { className: 'popup-wrapper', onClick: (e) => this.close(e) },
+                h('div', { className: 'popup', onClick: (e) => this.popupClick(e) })
+            )
+        }else{
+            return false
+        }
+    }
+}
+
 
 class Image extends Component {
 
     render() {
         return (
-            h('a', { className: 'image', title: this.props.image.date, onClick: (e) => { this.props.onClick() }, onContextMenu: (e) => this.props.onContext(e) }, 
+            h('a', { className: 'image', title: this.props.image.date, onClick: (e) => { this.props.onClick() }, onContextMenu: (e) => this.props.onContext(e, this.props.image.index) }, 
                 h('img', {src: 'data:image/png;base64,'+this.props.image.preview})
             )
         )
@@ -95,7 +116,8 @@ class App extends Component {
             images: [], 
             fullScreen: false, 
             previewIndex: 0, 
-            previewSrc: null
+            previewSrc: null,
+            popupIsOpen: false
         }
         this.basePath = ''
         this.previewBox = preact.createRef()
@@ -107,6 +129,10 @@ class App extends Component {
         })
         ipcRenderer.on('path:loaded', (event, path) => {
             this.basePath = path
+        })
+        ipcRenderer.on('popup:editDate', (event, index) => {
+            console.log(index)
+            this.openPopup()
         })
         document.addEventListener('keydown', (e) => {
             if (e.keyCode === 37) {
@@ -143,11 +169,20 @@ class App extends Component {
         }
     }
 
-    imageContext(e) {
+    imageContext(e, i) {
         ipcRenderer.send('image:context', {
             x: e.clientX, 
-            y: e.clientY
+            y: e.clientY,
+            imageIndex: i
         })
+    }
+
+    openPopup(){
+        this.setState({popupIsOpen: true})
+    }
+
+    closePopup(){
+        this.setState({popupIsOpen: false})
     }
     
     render() {
@@ -166,7 +201,7 @@ class App extends Component {
                                                 h('h2', null, day.title),
                                                 h('div', {className: 'images'}, 
                                                     day.data.map((image) => {
-                                                        return h(Image, {image, onClick: () => this.imagePreview(image.index), onContext: (e) => this.imageContext(e)})
+                                                        return h(Image, {image, onClick: () => this.imagePreview(image.index), onContext: (e, i) => this.imageContext(e, i)})
                                                     })
                                                 )
                                             )
@@ -177,7 +212,8 @@ class App extends Component {
                         )
                     })
                 ),
-                h('div', {className: `preview ${this.state.fullScreen ? '' : 'hidden'}`, ref: this.previewBox }, h('img', {src: this.state.previewSrc }) )
+                h('div', {className: `preview ${this.state.fullScreen ? '' : 'hidden'}`, ref: this.previewBox }, h('img', {src: this.state.previewSrc }) ),
+                h(Popup, { isOpen: this.state.popupIsOpen, close: () => this.closePopup() })
             )
     }
 }
