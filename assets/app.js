@@ -2,21 +2,7 @@ const preact = require('preact')
 const electron = require('electron')
 const { h, render, Component } = preact
 const { ipcRenderer } = electron
-
-const MONTHS = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
-]
+const { MONTHS } = require('./assets/constants')
 
 const sort = (data) => {
     return data.sort((a, b) => {
@@ -92,15 +78,18 @@ class Popup extends Component {
     }
 
     setDate(date){
+        console.log(date)
         this.setState({date})
     }
 
     setTime(time){
+        console.log(time)
         this.setState({time})
     }
 
     submit(e){
         e.preventDefault()
+        console.log(this.state.date,this.state.time)
         if(this.state.date && this.state.time){
             let date = new Date(`${this.state.date}T${this.state.time}`)
             this.props.setDate(date)
@@ -110,17 +99,29 @@ class Popup extends Component {
     render() {
         if(this.props.isOpen){
             return h('div', { className: 'popup-wrapper', onClick: (e) => this.close(e) },
-                h('div', { className: 'popup popup-edit', onClick: (e) => this.popupClick(e) }, 
-                    h('div', { className: 'close', onClick: (e) => this.close(e) }),
+                h('div', { className: 'popup', onClick: (e) => this.popupClick(e) },
+                    h('div', { className: 'popup-header' },
+                        'Edit photo shoot time',
+                        h('div', { className: 'close', onClick: (e) => this.close(e) }),
+                    ),
                     h('div', { className: 'popup-content' },
-                        h('form', { className: '', onSubmit: (e) => this.submit(e) },
-                            h('div', null,
-                                h('input', { type: 'date', name: 'date', onClick: (e) => this.setDate(e.target.value) }),
-                                h('input', { type: 'time', name: 'time', onClick: (e) => this.setTime(e.target.value) })
+                        h('div', null,
+                            h('div', { className: 'inline-group'},
+                                h('div', { className: 'form-group'},
+                                    h('label', null, 'Date'),
+                                    h('input', { type: 'date', name: 'date', onBlur: (e) => this.setDate(e.target.value), onClick: (e) => this.setDate(e.target.value) }),
+                                ),
+                                h('div', { className: 'form-group'},
+                                    h('label', null, 'Time'),
+                                    h('input', { type: 'time', name: 'time', onBlur: (e) => this.setTime(e.target.value), onClick: (e) => this.setTime(e.target.value) })
+                                )
                             ),
-                            h('button', { type: 'submit' }, 'OK')
+                            
                         )
-                    ) 
+                    ),
+                    h('div', { className: 'popup-footer' },
+                        h('button', { type: 'submit', onClick: (e) => this.submit(e)}, 'OK')
+                    )
                 )
             )
         }else{
@@ -146,6 +147,7 @@ class App extends Component {
         super(props)
         this.state = { 
             images: [], 
+            currentImage: null,
             fullScreen: false, 
             previewIndex: 0, 
             previewSrc: null,
@@ -162,9 +164,12 @@ class App extends Component {
         ipcRenderer.on('path:loaded', (event, path) => {
             this.basePath = path
         })
-        ipcRenderer.on('popup:editDate', (event, index) => {
-            console.log(index)
-            this.openPopup()
+        ipcRenderer.on('context:editImageDate', (event, index) => {
+            if(this.state.images[index]){
+                this.setState({currentImage: this.state.images[index]}, () => {
+                    this.openPopup()
+                })
+            }
         })
         document.addEventListener('keydown', (e) => {
             if (e.keyCode === 37) {
@@ -249,7 +254,7 @@ class App extends Component {
                     })
                 ),
                 h('div', {className: `preview ${this.state.fullScreen ? '' : 'hidden'}`, ref: this.previewBox }, h('img', {src: this.state.previewSrc }) ),
-                h(Popup, { isOpen: this.state.popupIsOpen, close: () => this.closePopup(), setDate: (date, index) => this.setDate(date, index) })
+                h(Popup, { isOpen: this.state.popupIsOpen, image: this.state.currentImage, close: () => this.closePopup(), setDate: (date) => this.setDate(date) })
             )
     }
 }

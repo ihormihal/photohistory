@@ -114,7 +114,7 @@ app.on('ready', () => {
     ctxImageMenu.append(new MenuItem({
         label: 'Edit time',
         click: () => {
-            if(ctxImageIndex) win.webContents.send('popup:editDate', ctxImageIndex)
+            if(ctxImageIndex) win.webContents.send('popup:editImageDate', ctxImageIndex)
         }
     }))
 
