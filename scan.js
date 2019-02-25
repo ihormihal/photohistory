@@ -39,7 +39,7 @@ const scan = (scanPath) => {
     const indexFilePath = path.resolve(scanPath, 'images.json')
     counter = 0
     utils.findFiles(scanPath, '!*.{png,gif,jpg,jpeg,JPG,JPEG}')
-        .then( images => Promise.all( images.map( image => utils.fileInfo(image)) ) )
+        .then( images => Promise.all( images.map( image => utils.fileInfo(image, scanPath)) ) )
         .then( images => sort( images ) )
         .then( images => Promise.all( images.map( (image, index) => resize(scanPath, image, images.length)) ) )
         .then( images => {
@@ -55,4 +55,4 @@ const scan = (scanPath) => {
 
 // /Users/admin/Documents
 // /Volumes/Transcend/MEDIA\ STORY/2009
-scan('/Users/admin/Documents')
+scan('/Users/ihormihal/Pictures')

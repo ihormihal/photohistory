@@ -4,6 +4,34 @@ const { h, render, Component } = preact
 const { ipcRenderer } = electron
 const { MONTHS } = require('./assets/constants')
 
+const formatDate = (date, pattern) => {
+    date = new Date(date)
+    let YYYY = date.getFullYear()
+    let MM = date.getMonth()+1
+    if(MM < 10) MM = '0'+MM
+    let DD = date.getDate()
+    if(DD < 10) DD = '0'+DD
+    let hh = date.getHours()
+    let mm = date.getMinutes()
+    let ss = date.getSeconds()
+
+    let dt = pattern.replace('YYYY',YYYY)
+    dt = dt.replace('MM',MM)
+    dt = dt.replace('DD',DD)
+    dt = dt.replace('hh',hh)
+    dt = dt.replace('mm',mm)
+    dt = dt.replace('ss',ss)
+    
+    return dt
+}
+
+const formatTime = (date) => {
+    date = new Date(date)
+    let hh = date.getHours()
+    let mm = date.getHours()
+    return `${hh}:${mm}`
+}
+
 const sort = (data) => {
     return data.sort((a, b) => {
         if (a.date > b.date) return -1
@@ -13,21 +41,16 @@ const sort = (data) => {
 
 const sortImages = (images) => {
     let data = {}
-    // const offset = new Date().getTimezoneOffset() * 60000
     for(let i=0;i<images.length;i++){
-        let dt = new Date(images[i].date.slice(0, -5))
-        let year = dt.getFullYear()
-        let month = dt.getMonth()
-        let day = dt.getDate()
+        let dt = new Date(images[i].date)
+        let year = formatDate(images[i].date, "YYYY")
+        let month = formatDate(images[i].date, "MM")
+        let day = formatDate(images[i].date, "DD")
 
-        let m = parseInt(month)+1
-        if(m<10) m = '0'+m
-        let d = day<10 ? '0'+day : day
-        
         if(!data[year]) data[year] = {}
-        if(!data[year][m]) data[year][m] = {}
-        if(!data[year][m][d]) data[year][m][d] = []
-        data[year][m][d].push({
+        if(!data[year][month]) data[year][month] = {}
+        if(!data[year][month][day]) data[year][month][day] = []
+        data[year][month][day].push({
             ...images[i],
             index: i
         })
@@ -69,8 +92,16 @@ class Popup extends Component {
         this.state = {}
     }
 
+    open(){
+        this.setState({
+            date: formatDate(this.props.image.date, "YYYY-MM-DD"),
+            time: formatDate(this.props.image.date, "hh:mm")
+        })
+        this.setState({isOpen: true})
+    }
+
     close(){
-        this.props.close()
+        this.setState({isOpen: false})
     }
 
     popupClick(e){
@@ -78,30 +109,30 @@ class Popup extends Component {
     }
 
     setDate(date){
-        console.log(date)
         this.setState({date})
     }
 
     setTime(time){
-        console.log(time)
         this.setState({time})
     }
 
     submit(e){
         e.preventDefault()
-        console.log(this.state.date,this.state.time)
         if(this.state.date && this.state.time){
             let date = new Date(`${this.state.date}T${this.state.time}`)
-            this.props.setDate(date)
+            // let dt = new Date(date.getTime() + new Date().getTimezoneOffset()*60000)
+            this.props.setDate(date, this.props.image.index)
+            this.close()
         }
     }
     
     render() {
-        if(this.props.isOpen){
+        console.log(this.props)
+        if(this.state.isOpen){
             return h('div', { className: 'popup-wrapper', onClick: (e) => this.close(e) },
                 h('div', { className: 'popup', onClick: (e) => this.popupClick(e) },
                     h('div', { className: 'popup-header' },
-                        'Edit photo shoot time',
+                        'Edit shooting time',
                         h('div', { className: 'close', onClick: (e) => this.close(e) }),
                     ),
                     h('div', { className: 'popup-content' },
@@ -109,11 +140,11 @@ class Popup extends Component {
                             h('div', { className: 'inline-group'},
                                 h('div', { className: 'form-group'},
                                     h('label', null, 'Date'),
-                                    h('input', { type: 'date', name: 'date', onBlur: (e) => this.setDate(e.target.value), onClick: (e) => this.setDate(e.target.value) }),
+                                    h('input', { type: 'date', value: this.state.date, name: 'date', onBlur: (e) => this.setDate(e.target.value), onClick: (e) => this.setDate(e.target.value) }),
                                 ),
                                 h('div', { className: 'form-group'},
                                     h('label', null, 'Time'),
-                                    h('input', { type: 'time', name: 'time', onBlur: (e) => this.setTime(e.target.value), onClick: (e) => this.setTime(e.target.value) })
+                                    h('input', { type: 'time', value: this.state.time, name: 'time', onBlur: (e) => this.setTime(e.target.value), onClick: (e) => this.setTime(e.target.value) })
                                 )
                             ),
                             
@@ -134,9 +165,17 @@ class Popup extends Component {
 class Image extends Component {
 
     render() {
+        let date = new Date(this.props.image.date)
+        let dt = `${date.getFullYear()}-${date.getMonth()+1}`
         return (
-            h('a', { className: 'image', title: this.props.image.date, onClick: (e) => { this.props.onClick() }, onContextMenu: (e) => this.props.onContext(e, this.props.image.index) }, 
-                h('img', {src: 'data:image/png;base64,'+this.props.image.preview})
+            h('a', { 
+                    className: 'image', 
+                    title: this.props.image.date, 
+                    onClick: (e) => this.props.onClick(), 
+                    onContextMenu: (e) => this.props.onContext(e, this.props.image.index) 
+                }, 
+                h('img', {src: 'data:image/png;base64,'+this.props.image.preview}),
+                h('span', { className: 'date' }, formatDate(this.props.image.date, "DD.MM.YYYY hh:mm"))
             )
         )
     }
@@ -151,8 +190,10 @@ class App extends Component {
             fullScreen: false, 
             previewIndex: 0, 
             previewSrc: null,
-            popupIsOpen: false
+            popupIsOpen: false,
+            showDates: false
         }
+        this.popup = false
         this.basePath = ''
         this.previewBox = preact.createRef()
     }
@@ -161,13 +202,16 @@ class App extends Component {
         ipcRenderer.on('images:loaded', (event, images) => {
             this.setState({ images })
         })
-        ipcRenderer.on('path:loaded', (event, path) => {
-            this.basePath = path
+        ipcRenderer.on('images:toggleDates', (event) => {
+            this.setState({ showDates: !this.state.showDates })
         })
         ipcRenderer.on('context:editImageDate', (event, index) => {
             if(this.state.images[index]){
-                this.setState({currentImage: this.state.images[index]}, () => {
-                    this.openPopup()
+                this.setState({currentImage: {
+                    index,
+                    ...this.state.images[index]
+                }}, () => {
+                    this.popup.open()
                 })
             }
         })
@@ -214,16 +258,13 @@ class App extends Component {
         })
     }
 
-    openPopup(){
-        this.setState({popupIsOpen: true})
-    }
-
-    closePopup(){
-        this.setState({popupIsOpen: false})
-    }
-
     setDate(date, index){
-        console.log(date, index)
+        ipcRenderer.send('image:updateDate', {
+            index, 
+            date
+        })
+        this.state.images[index].date = date.toISOString()
+        this.forceUpdate()
     }
     
     render() {
@@ -240,7 +281,7 @@ class App extends Component {
                                         month.data.map((day) => {
                                             return h('div', {className: 'box day-box'}, 
                                                 h('h2', null, day.title),
-                                                h('div', {className: 'images'}, 
+                                                h('div', {className: `images ${this.state.showDates ? 'show-dates' : ''}`}, 
                                                     day.data.map((image) => {
                                                         return h(Image, {image, onClick: () => this.imagePreview(image.index), onContext: (e, i) => this.imageContext(e, i)})
                                                     })
@@ -254,7 +295,7 @@ class App extends Component {
                     })
                 ),
                 h('div', {className: `preview ${this.state.fullScreen ? '' : 'hidden'}`, ref: this.previewBox }, h('img', {src: this.state.previewSrc }) ),
-                h(Popup, { isOpen: this.state.popupIsOpen, image: this.state.currentImage, close: () => this.closePopup(), setDate: (date) => this.setDate(date) })
+                h(Popup, { ref: popup => this.popup = popup, image: this.state.currentImage, setDate: (date, index) => this.setDate(date, index) })
             )
     }
 }
