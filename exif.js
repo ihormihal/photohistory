@@ -3,7 +3,7 @@ const utils = require('./core/utils')
 
 
 
-const main = (sourceFolder, targetFolder) => {
+const main = async (sourceFolder, targetFolder) => {
     const sourceFiles = await utils.findFiles(sourceFolder, "!*.{png,gif,jpg,jpeg,JPG,JPEG,NEF}", true)
     const sourceFilesInfo = await Promise.all(sourceFiles.map(file => utils.fileInfo(file)))
     const targetFiles = await utils.findFiles(targetFolder, "!*.{png,gif,jpg,jpeg,JPG,JPEG}", true)

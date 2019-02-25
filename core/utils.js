@@ -20,24 +20,28 @@ const findFiles = (dirPath, pattern, isAbsolutePath) => {
     })
 }
 
-const fileInfo = (file) => {
+const fileInfo = (file, basePath) => {
     return new Promise((resolve, reject) => {
-        fs.stat(file.path, (err, info) => {
+        let filePath = basePath ? path.resolve(basePath, file.path) : file.path
+        fs.stat(filePath, (err, info) => {
             if(err) {
                 reject(err)
                 return
             }
+            let date = new Date(Math.min(info.atimeMs, info.mtimeMs, info.ctimeMs, info.birthtimeMs))
             resolve({
                 ...file,
-                date: info.birthtime > info.mtime ? info.mtime : info.birthtime
+                date
             })
         })
     })
 }
 
-const updateTime = (file, date) => {
+const updateTime = (file, date, basePath) => {
+    date = new Date(date)
+    let filePath = basePath ? path.resolve(basePath, file.path) : file.path
     return new Promise((resolve, reject) => {
-        fs.utimes(file.path, date, date, (err, info) => {
+        fs.utimes(filePath, date, date, (err, info) => {
             if(err) {
                 reject(err)
                 return
