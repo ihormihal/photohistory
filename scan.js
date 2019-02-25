@@ -55,4 +55,4 @@ const scan = (scanPath) => {
 
 // /Users/admin/Documents
 // /Volumes/Transcend/MEDIA\ STORY/2009
-scan('/Users/ihormihal/Pictures')
+scan("f:/MEDIA STORY/2013/UAE-December/100D5100/DIST")

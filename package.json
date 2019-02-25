@@ -15,5 +15,8 @@
     "preact": "*",
     "recursive-readdir": "*",
     "sharp": "*"
+  },
+  "dependencies": {
+    "fast-exif": "^1.0.1"
   }
 }

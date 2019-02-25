@@ -57,16 +57,18 @@ h1, h2 {
     border-left: none;
     border-top: none;
 }
-.images .image .date {
+.images .image .date, .images .image .name {
     position: absolute;
-    bottom: 0;
     left: 0;
     width: 100%;
     background-color: #000;
     font-size: 10px;
     display: none;
 }
-.images.show-dates .image .date {
+.images .image .date {bottom: 0; }
+.images .image .name {top: 0; }
+.images.show-dates .image .date,
+.images.show-dates .image .name {
     display: block;
 }
 .images .image img {

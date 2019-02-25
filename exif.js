@@ -16,6 +16,6 @@ const main = async (sourceFolder, targetFolder) => {
 }
 
 main(
-    "f:/MEDIA STORY/2013/UAE-December/with_Alla/RAW",
-    "f:/MEDIA STORY/2013/UAE-December/with_Alla/DIST",
+    "f:/MEDIA STORY/2013/UAE-December/100D5100/RAW",
+    "f:/MEDIA STORY/2013/UAE-December/100D5100/DIST",
 )

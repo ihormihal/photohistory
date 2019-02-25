@@ -12,8 +12,11 @@ const formatDate = (date, pattern) => {
     let DD = date.getDate()
     if(DD < 10) DD = '0'+DD
     let hh = date.getHours()
+    if(hh < 10) hh = '0'+hh
     let mm = date.getMinutes()
+    if(mm < 10) mm = '0'+mm
     let ss = date.getSeconds()
+    if(ss < 10) ss = '0'+ss
 
     let dt = pattern.replace('YYYY',YYYY)
     dt = dt.replace('MM',MM)
@@ -39,13 +42,16 @@ const sort = (data) => {
     })
 }
 
+const timezoneOffset = -7200000
 const sortImages = (images) => {
     let data = {}
     for(let i=0;i<images.length;i++){
-        let dt = new Date(images[i].date)
-        let year = formatDate(images[i].date, "YYYY")
-        let month = formatDate(images[i].date, "MM")
-        let day = formatDate(images[i].date, "DD")
+        let dt = new Date(images[i].date).getTime() + timezoneOffset
+        let date = new Date(dt)
+        images[i].fdate = date
+        let year = formatDate(date, "YYYY")
+        let month = formatDate(date, "MM")
+        let day = formatDate(date, "DD")
 
         if(!data[year]) data[year] = {}
         if(!data[year][month]) data[year][month] = {}
@@ -127,7 +133,6 @@ class Popup extends Component {
     }
     
     render() {
-        console.log(this.props)
         if(this.state.isOpen){
             return h('div', { className: 'popup-wrapper', onClick: (e) => this.close(e) },
                 h('div', { className: 'popup', onClick: (e) => this.popupClick(e) },
@@ -166,7 +171,6 @@ class Image extends Component {
 
     render() {
         let date = new Date(this.props.image.date)
-        let dt = `${date.getFullYear()}-${date.getMonth()+1}`
         return (
             h('a', { 
                     className: 'image', 
@@ -175,7 +179,8 @@ class Image extends Component {
                     onContextMenu: (e) => this.props.onContext(e, this.props.image.index) 
                 }, 
                 h('img', {src: 'data:image/png;base64,'+this.props.image.preview}),
-                h('span', { className: 'date' }, formatDate(this.props.image.date, "DD.MM.YYYY hh:mm"))
+                h('span', { className: 'date' }, formatDate(this.props.image.fdate, "DD.MM.YYYY hh:mm")),
+                h('span', { className: 'name' }, this.props.image.filename)
             )
         )
     }
@@ -201,6 +206,9 @@ class App extends Component {
     componentDidMount() {
         ipcRenderer.on('images:loaded', (event, images) => {
             this.setState({ images })
+        })
+        ipcRenderer.on('path:loaded', (event, basePath) => {
+            this.basePath = basePath
         })
         ipcRenderer.on('images:toggleDates', (event) => {
             this.setState({ showDates: !this.state.showDates })

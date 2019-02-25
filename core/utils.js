@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const recursive = require('recursive-readdir')
+const exif = require('fast-exif')
 
 const findFiles = (dirPath, pattern, isAbsolutePath) => {
     return new Promise((resolve, reject) => {
@@ -21,20 +22,27 @@ const findFiles = (dirPath, pattern, isAbsolutePath) => {
 }
 
 const fileInfo = (file, basePath) => {
-    return new Promise((resolve, reject) => {
-        let filePath = basePath ? path.resolve(basePath, file.path) : file.path
-        fs.stat(filePath, (err, info) => {
-            if(err) {
-                reject(err)
-                return
-            }
-            let date = new Date(Math.min(info.atimeMs, info.mtimeMs, info.ctimeMs, info.birthtimeMs))
-            resolve({
+    let filePath = basePath ? path.resolve(basePath, file.path) : file.path
+    return exif.read(filePath)
+        .then((res) => {
+            return {
                 ...file,
-                date
-            })
+                date: new Date(res.exif.DateTimeOriginal)
+            }
         })
-    })
+    // return new Promise((resolve, reject) => {
+    //     fs.stat(filePath, (err, info) => {
+    //         if(err) {
+    //             reject(err)
+    //             return
+    //         }
+    //         let date = new Date(Math.min(info.atimeMs, info.mtimeMs, info.ctimeMs, info.birthtimeMs))
+    //         resolve({
+    //             ...file,
+    //             date
+    //         })
+    //     })
+    // })
 }
 
 const updateTime = (file, date, basePath) => {
